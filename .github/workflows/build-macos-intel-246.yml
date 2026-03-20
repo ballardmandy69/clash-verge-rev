@@ -1,0 +1,74 @@
+name: Build YeshaVergeFlow macOS Intel 2.4.6
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - my-2.4.6
+
+permissions:
+  contents: read
+
+env:
+  HUSKY: 0
+  CARGO_INCREMENTAL: 0
+  RUST_BACKTRACE: short
+  TARGET: x86_64-apple-darwin
+
+jobs:
+  build-macos-intel:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ env.TARGET }}
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          prefix-key: v1-rust
+          key: rust-macos-intel-${{ env.TARGET }}
+          workspaces: |
+            . -> target
+          cache-all-crates: true
+          cache-workspace-crates: true
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm i
+
+      - name: Prebuild
+        run: pnpm run prebuild ${{ env.TARGET }}
+
+      - name: Add Rust target
+        run: rustup target add ${{ env.TARGET }}
+
+      - name: Build DMG
+        run: pnpm tauri build --target ${{ env.TARGET }} -b dmg
+        env:
+          NODE_OPTIONS: --max_old_space_size=4096
+
+      - name: Upload DMG
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: YeshaVergeFlow-macos-x64-2.4.6
+          path: |
+            target/${{ env.TARGET }}/release/bundle/dmg/*.dmg
+            src-tauri/target/${{ env.TARGET }}/release/bundle/dmg/*.dmg
+          if-no-files-found: error
