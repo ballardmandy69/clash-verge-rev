@@ -130,7 +130,7 @@ impl NetworkManager {
         if let Some(ua) = user_agent.filter(|s| !s.trim().is_empty()) {
             headers.insert(USER_AGENT, HeaderValue::from_str(ua.as_str())?);
         } else {
-            headers.insert(USER_AGENT, HeaderValue::from_str("YeshaVergeFlow/1.0")?);
+            headers.insert(USER_AGENT, HeaderValue::from_str("metaYeshaFlow/1.0")?);
         }
 
         let client = self.build_client(proxy_url, headers, accept_invalid_certs, timeout_secs)?;
